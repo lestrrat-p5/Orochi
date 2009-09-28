@@ -1,5 +1,6 @@
 package Orochi::Declare;
 use strict;
+use Orochi;
 use Sub::Exporter -setup => {
     exports => [ qw( bind_value container inject_constructor inject_literal ) ],
     groups  => [ default => [':all'] ]
@@ -45,12 +46,30 @@ sub bind_value ($) {
 
 __END__
 
+=head1 NAME
+
+Orochi::Declare - Declarative Style Orochi DI
+
+=head1 SYNOPSIS
+
+    use Orochi::Declare;
+
     my $c = container {
         inject_constructor '/myapp' => (
             class => 'MyApp',
             args  => {
-                foo => inject_constructor('/myapp/foo' 
-        )
+                foo => bind_value '/myapp/foo',
+            }
+        );
+        inject_constructor '/myapp/foo' => (
+            class => 'MyApp::Foo',
+            args  => {
+                bar => bind_value '/myapp/foo/bar'
+            }
+        );
+        inject_literal '/myapp/foo/bar' => 1;
     }
 
     my $myapp = $c->get('/myapp');
+
+=cut
