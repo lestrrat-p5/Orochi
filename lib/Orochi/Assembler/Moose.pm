@@ -16,7 +16,12 @@ sub inject_class {
         return;
     }
 
-    $self->inject( $meta->bind_to, $meta->injection );
+    $self->inject( $meta->bind_path, $meta->bind_injection );
+
+    my $injections = $meta->injections;
+    while ( my($path, $injection) = each %$injections) {
+        $self->inject( $path, $injection );
+    }
 }
 
 sub inject_namespace {

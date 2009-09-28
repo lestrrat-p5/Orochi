@@ -1,14 +1,24 @@
 package MooseX::Orochi::Meta::Class;
 use Moose::Role;
+use MooseX::AttributeHelpers;
 
-has bind_to => (
+has bind_path => (
     is => 'rw',
     isa => 'Str'
 );
 
-has injection => (
+has bind_injection => (
     is => 'rw',
     does => 'Orochi::Injection',
+);
+
+has injections => (
+    metaclass => 'Collection::Hash',
+    is => 'ro',
+    isa => 'HashRef',
+    provides => {
+        set => 'add_injection',
+    }
 );
 
 1;

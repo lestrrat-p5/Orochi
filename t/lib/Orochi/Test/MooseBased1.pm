@@ -2,8 +2,7 @@ package Orochi::Test::MooseBased1;
 use Moose;
 use MooseX::Orochi;
 
-bind_to '/orochi/test/MooseBased1';
-inject  'Constructor' => (
+bind_constructor '/orochi/test/MooseBased1' => (
     args => {
         foo => bind_value '/orochi/test/MooseBased1/foo',
         bar => bind_value '/orochi/test/MooseBased1/bar',

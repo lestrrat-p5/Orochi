@@ -1,9 +1,9 @@
 package MooseX::Orochi;
-use Moose ();
+use Moose qw(confess);
 use Moose::Exporter;
 
 Moose::Exporter->setup_import_methods(
-    with_meta => [ qw(bind_to inject) ],
+    with_meta => [ qw(bind_constructor inject) ],
     as_is     => [ qw(bind_value) ],
 );
 
@@ -16,19 +16,11 @@ sub init_meta {
     $meta;
 }
 
-sub bind_to ($) {
-    my ($meta, $path) = @_;
-    $meta->bind_to($path);
-}
+sub bind_constructor ($;%) {
+    my ($meta, $path, %args) = @_;
+    $meta->bind_path($path);
 
-sub bind_value ($) {
-    my ($path) = @_;
-    return Orochi::Injection::BindValue->new(bind_to => $path);
-}
-
-sub inject ($%) {
-    my ($meta, $class, %args) = @_;
-
+    my $class = $args{injection_class} || 'Constructor';
     if ($class !~ s/^\+//) {
         $class = "Orochi::Injection::$class";
     }
@@ -37,12 +29,50 @@ sub inject ($%) {
         Class::MOP::load_class($class);
     }
 
-    if ($class->isa('Orochi::Injection::Constructor') ||
-        $class->isa('Orochi::Injection::Constructor') ) {
-        $args{class} ||= $meta->name;
+    if (! $class->isa('Orochi::Injection::Constructor')) {
+        confess "$class is not a Orochi::Injection::Constructor subclass";
     }
-
-    $meta->injection( $class->new(%args) );
+    $meta->bind_injection( $class->new(%args, class => $meta->name) );
 }
         
+sub bind_value ($) {
+    my ($path) = @_;
+    return Orochi::Injection::BindValue->new(bind_to => $path);
+}
+
+sub inject ($$) {
+    my ($meta, $path, $inject) = @_;
+    $meta->add_injections( $path => $inject );
+}
+
 1;
+
+__END__
+
+=head1 NAME
+
+MooseX::Orochi - Annotated Your Moose Classes With Orochi
+
+=head1 SYNOPSIS
+
+    package MyApp::MyClass;
+    use Moose;
+    use MooseX::Orochi;
+
+    bind_constructor '/myapp/myclass' => (
+        args => {
+            arg1 => bind_value '/myapp/some/dep1',
+            arg2 => bind_value '/myapp/some/dep2',
+        }
+    );
+
+    # you can also inject random things
+    inject '/foo/bar/baz' => Orochi::Injection::Constructor->new(
+        class => 'FooBar',
+        args  => { ... }
+    );
+
+    has arg1 => (...);
+    has arg2 => (...);
+
+=cut
