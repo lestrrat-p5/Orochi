@@ -1,6 +1,7 @@
 package Orochi::Declare;
 use strict;
 use Orochi;
+use Carp ();
 use Sub::Exporter -setup => {
     exports => [ qw( bind_value container inject_constructor inject_literal ) ],
     groups  => [ default => [':all'] ]
@@ -30,16 +31,22 @@ sub container(&) {
     return $c;
 }
 
+sub __CONTAINER__ {
+    my $method = (caller(1))[3];
+    return $__CONTAINER || 
+        Carp::confess("Attempting to run $method from outside a container");
+}
+
 sub inject_constructor ($@) {
-    return $__CONTAINER->inject_constructor(@_);
+    return __CONTAINER__->inject_constructor(@_);
 }
 
 sub inject_literal ($$) {
-    return $__CONTAINER->inject_literal(@_);
+    return __CONTAINER__->inject_literal(@_);
 }
 
 sub bind_value ($) {
-    return $__CONTAINER->bind_value(@_);
+    return __CONTAINER__->bind_value(@_);
 }
 
 1;
