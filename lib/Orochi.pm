@@ -108,4 +108,12 @@ Orochi - A DI Container For Perl
     );
     $c->inject_literal( '/myapp/bar' => [ 'a', 'b', 'c' ] );
 
+=head1 USAGE WITH MOOSE CLASSES
+
+Please see L<MooseX::Orochi|MooseX::Orochi>.
+
+=head1 SEE ALSO
+
+L<Bread::Board|Bread::Board>
+
 =cut

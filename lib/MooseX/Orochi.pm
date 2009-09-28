@@ -75,4 +75,13 @@ MooseX::Orochi - Annotated Your Moose Classes With Orochi
     has arg1 => (...);
     has arg2 => (...);
 
+    # Then, somewhere in your main code...
+
+    my $c = Orochi->new_with_traits(
+        traits => [ 'Assembler::Moose' ],
+    );
+    $c->inject_class( 'MyApp::MyClass' );
+
+    my $object = $c->get( '/myapp/myclass' );
+
 =cut
