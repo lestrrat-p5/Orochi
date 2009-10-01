@@ -15,9 +15,13 @@ override expand => sub {
     my ($self, $c) = @_;
 
     my $object = super();
-    my $params = $self->expand_all_injections( $self->setter_params );
+    my $params = $self->setter_params;
+    $self->expand_all_injections( $c, $params );
 
     while (my ($attr, $value) = each %$params ) {
+        if (Orochi::DEBUG()) {
+            print STDERR " + Setting $attr to $value on $object\n";
+        }
         $object->$attr($value);
     }
     $object;

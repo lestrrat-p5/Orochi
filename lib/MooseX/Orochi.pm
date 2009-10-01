@@ -3,7 +3,7 @@ use Moose qw(confess);
 use Moose::Exporter;
 
 Moose::Exporter->setup_import_methods(
-    with_meta => [ qw(bind_constructor inject) ],
+    with_meta => [ qw(bind_constructor bind_inherited inject) ],
     as_is     => [ qw(bind_value) ],
 );
 
@@ -44,10 +44,32 @@ sub bind_constructor ($;%) {
     }
     $meta->bind_injection( $class->new(%args, class => $meta->name) );
 }
-        
+
 sub bind_value ($) {
     my ($path) = @_;
     return Orochi::Injection::BindValue->new(bind_to => $path);
+}
+
+sub bind_inherited (;$) {
+    my ($meta, $class) = @_;
+
+    my $from_meta;
+    if ($class) {
+        $from_meta = Moose::Util::find_meta($class);
+    } else {
+        foreach my $p ( $meta->linearized_isa ) {
+            next if $p eq $meta->name;
+            if ( Moose::Util::does_role( $p->meta, 'MooseX::Orochi::Meta::Class' ) ) {
+                $from_meta = $p->meta;
+                last;
+            }
+        }
+    }
+
+    foreach my $attr qw(bind_path bind_injection injections) {
+        my $value = $from_meta->$attr();
+        $meta->$attr( $value ) if defined $value;
+    }
 }
 
 sub inject ($$) {

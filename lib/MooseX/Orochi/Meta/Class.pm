@@ -14,7 +14,7 @@ has bind_injection => (
 
 has injections => (
     metaclass => 'Collection::Hash',
-    is => 'ro',
+    is => 'rw',
     isa => 'HashRef',
     provides => {
         set => 'add_injection',
