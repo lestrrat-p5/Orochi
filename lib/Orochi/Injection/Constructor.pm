@@ -39,12 +39,26 @@ has constructor => (
 sub expand {
     my ($self, $c) = @_;
 
+    my @args = $self->mangle_args($c);
+    return $self->construct_object($c, \@args);
+}
+
+sub construct_object {
+    my ($self, $c, $args) = @_;
+
+    my $constructor = $self->constructor;
+    return $self->has_block ?
+        $self->block->( $self->class, @$args ) :
+        $self->class->$constructor(@$args)
+    ;
+}
+
+sub mangle_args {
+    my ($self, $c) = @_;
+
     my @args;
     if ($self->has_args) {
         my $x = $self->args;
-
-use Data::Dumper;
-print STDERR Dumper($x);
 
         if (blessed $x && Moose::Util::does_role($x, 'Orochi::Injection')) {
             $x = $x->expand($c);
@@ -63,12 +77,8 @@ print STDERR Dumper($x);
     }
 
     $self->expand_all_injections($c, \@args);
-    my $constructor = $self->constructor;
 
-    return $self->has_block ?
-        $self->block->( $self->class, @args ) :
-        $self->class->$constructor(@args)
-    ;
+    return @args;
 }
 
 1;
