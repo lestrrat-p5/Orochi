@@ -5,11 +5,18 @@ use Orochi::Injection::BindValue;
 use Orochi::Injection::Constructor;
 use Orochi::Injection::Literal;
 use Path::Router;
+use constant DEBUG => ($ENV{OROCHI_DEBUG});
 
 with 'MooseX::Traits';
 
 has '+_trait_namespace' => (
     default => __PACKAGE__
+);
+
+has prefix => (
+    is => 'ro',
+    isa => 'Str',
+    predicate => 'has_prefix',
 );
 
 has router => (
@@ -25,6 +32,7 @@ sub _build_router {
 sub get {
     my ($self, $path) = @_;
 
+    $path = $self->mangle_path( $path );
     my $matched = $self->router->match( $path );
     if ( $matched ) {
         return $matched->target->expand( $self );;
@@ -32,8 +40,29 @@ sub get {
     return ();
 }
 
+sub mangle_path {
+    my ($self, $path) = @_;
+    if ( my $prefix = $self->prefix ) {
+        if ($path !~ /^\//) {
+            if ($prefix !~ /\/$/) {
+                $prefix .= '/';
+            }
+            $path = $prefix . $path;
+        }
+    }
+    return $path;
+}
+        
 sub inject {
     my ($self, $path, $injection) = @_;
+
+    confess "no path specified" unless $path;
+
+    $path = $self->mangle_path($path);
+
+    if (DEBUG()) {
+        print STDERR "Injecting $path\n";
+    }
     $self->router->insert_route($path => (target => $injection));
 }
 
@@ -84,6 +113,48 @@ sub inject_literal {
     $self->inject($path, $injection);
     return $injection;
 }
+
+sub inject_class {
+    my ($self, $class) = @_;
+
+    if (! Class::MOP::is_class_loaded($class)) {
+        Class::MOP::load_class($class);
+    }
+
+    my $meta = Moose::Util::find_meta($class);
+    if (! Moose::Util::does_role($meta, 'MooseX::Orochi::Meta::Class')) {
+        # Silently drop?
+        # confess "$class does not implement MooseX::Orochi";
+        return;
+    }
+
+    if (! $meta->bind_path ) {
+        Carp::cluck( "No bind_path specified for $class. Did you specify it via bind_constructor?" );
+        return;
+    } 
+
+    if (! $meta->bind_injection ) {
+        Carp::cluck( "No bind_injection specified for $class. Did you specify it via bind_constructor?" );
+        return;
+    } 
+
+    $self->inject( $meta->bind_path, $meta->bind_injection );
+
+    my $injections = $meta->injections;
+    while ( my($path, $injection) = each %$injections) {
+        $self->inject( $path, $injection );
+    }
+}
+
+sub inject_namespace {
+    my ($self, $namespace) = @_;
+
+    my $mpo = Module::Pluggable::Object->new(
+        search_path => $namespace,
+    );
+    $self->inject_class($_) for $mpo->plugins;
+}
+
 
 __PACKAGE__->meta->make_immutable;
 

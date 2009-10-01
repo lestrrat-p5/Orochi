@@ -9,10 +9,20 @@ Moose::Exporter->setup_import_methods(
 
 sub init_meta {
     shift;
-    my $meta = Moose->init_meta(@_);
-    Moose::Util::MetaRole::apply_metaclass_roles(@_,
-        metaclass_roles => [ 'MooseX::Orochi::Meta::Class' ]
-    );
+    my %args = @_;
+
+    my $meta = Moose::Util::find_meta( $args{for_class} );
+
+    if ($meta->isa('Moose::Meta::Role')) {
+        $meta = Moose::Meta::Role
+            ->initialize('MooseX::Orochi::Meta::Class')
+            ->apply( $meta )
+        ;
+    } else {
+        Moose::Util::MetaRole::apply_metaclass_roles(@_,
+            metaclass_roles => [ 'MooseX::Orochi::Meta::Class' ]
+        );
+    }
     $meta;
 }
 

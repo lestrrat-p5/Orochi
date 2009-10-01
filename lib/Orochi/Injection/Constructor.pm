@@ -12,7 +12,7 @@ has class => (
 
 has args => (
     is => 'ro',
-    isa => 'HashRef | ArrayRef',
+    isa => 'Orochi::Injection | HashRef | ArrayRef',
     predicate => 'has_args',
 );
 
@@ -23,12 +23,33 @@ has deref_args => (
     default => 1
 );
 
+has block => (
+    is => 'ro',
+    isa => 'CodeRef',
+    predicate => 'has_block'
+);
+
+has constructor => (
+    is => 'ro',
+    isa => 'Str',
+    required => 1,
+    default => 'new',
+);
+
 sub expand {
     my ($self, $c) = @_;
 
     my @args;
     if ($self->has_args) {
         my $x = $self->args;
+
+use Data::Dumper;
+print STDERR Dumper($x);
+
+        if (blessed $x && Moose::Util::does_role($x, 'Orochi::Injection')) {
+            $x = $x->expand($c);
+        }
+        
         if ($self->deref_args) {
             my $ref = ref $x;
             @args = 
@@ -42,8 +63,12 @@ sub expand {
     }
 
     $self->expand_all_injections($c, \@args);
+    my $constructor = $self->constructor;
 
-    return $self->class->new(@args);
+    return $self->has_block ?
+        $self->block->( $self->class, @args ) :
+        $self->class->$constructor(@args)
+    ;
 }
 
 1;
