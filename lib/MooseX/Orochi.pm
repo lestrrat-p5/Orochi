@@ -1,6 +1,7 @@
 package MooseX::Orochi;
 use Moose qw(confess);
 use Moose::Exporter;
+use Orochi;
 
 Moose::Exporter->setup_import_methods(
     with_meta => [ qw(bind_constructor bind_inherited inject) ],

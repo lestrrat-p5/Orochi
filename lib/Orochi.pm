@@ -121,10 +121,18 @@ sub inject_class {
         Class::MOP::load_class($class);
     }
 
-    my $meta = Moose::Util::find_meta($class);
-    if (! Moose::Util::does_role($meta, 'MooseX::Orochi::Meta::Class')) {
-        # Silently drop?
-        # confess "$class does not implement MooseX::Orochi";
+    my $meta;
+
+    # Find the first Orochi meta class in the inheritance tree
+    foreach my $a_class ( $class->meta->linearized_isa ) {
+        my $foo;
+        $foo = Moose::Util::find_meta($a_class);
+        if (Moose::Util::does_role($foo, 'MooseX::Orochi::Meta::Class')) {
+            $meta = $foo;
+        }
+    }
+
+    if (! $meta) {
         return;
     }
 
