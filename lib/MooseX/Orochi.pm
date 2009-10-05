@@ -4,7 +4,7 @@ use Moose::Exporter;
 use Orochi;
 
 Moose::Exporter->setup_import_methods(
-    with_meta => [ qw(bind_constructor bind_inherited inject) ],
+    with_meta => [ qw(bind_constructor inject) ],
     as_is     => [ qw(bind_value) ],
 );
 
@@ -51,28 +51,6 @@ sub bind_value ($) {
     return Orochi::Injection::BindValue->new(bind_to => $path);
 }
 
-sub bind_inherited (;$) {
-    my ($meta, $class) = @_;
-
-    my $from_meta;
-    if ($class) {
-        $from_meta = Moose::Util::find_meta($class);
-    } else {
-        foreach my $p ( $meta->linearized_isa ) {
-            next if $p eq $meta->name;
-            if ( Moose::Util::does_role( $p->meta, 'MooseX::Orochi::Meta::Class' ) ) {
-                $from_meta = $p->meta;
-                last;
-            }
-        }
-    }
-
-    foreach my $attr qw(bind_path bind_injection injections) {
-        my $value = $from_meta->$attr();
-        $meta->$attr( $value ) if defined $value;
-    }
-}
-
 sub inject ($$) {
     my ($meta, $path, $inject) = @_;
     $meta->add_injections( $path => $inject );
@@ -110,11 +88,181 @@ MooseX::Orochi - Annotated Your Moose Classes With Orochi
 
     # Then, somewhere in your main code...
 
-    my $c = Orochi->new_with_traits(
-        traits => [ 'Assembler::Moose' ],
-    );
+    my $c = Orochi->new();
     $c->inject_class( 'MyApp::MyClass' );
 
     my $object = $c->get( '/myapp/myclass' );
+
+=head1 DESCRIPTION
+
+MooseX::Orochi is a transparent add-on to your Moose-based classes that allows create a Depdency Injection Containers. If you don't know what that is, it basically allows you to define and assemble a set of objects that depend on eachother with no external configuration required.
+
+With MooseX::Orochi, all you really need to do is
+
+    1. Build a set of objects with MooseX::Orochi annotations
+    2. use Orochi->inject_class() to inject your definitions
+    3. use Orochi->get() to access the resulting objects.
+
+=head1 PROVIDED DSL
+
+=over 4
+
+=item bind_constructor $path => %injection_args
+
+Creates a Orochi::Injection::Constructor (or subclass thereof)
+
+=item bind_value $path
+
+Returns a Orochi::Injection::BindValue object, which will materialize when
+the containing Injection is expanded.
+
+=item inject $path => $injection
+
+Injects the given injection.
+
+=head1 ANNOTATIONS WITH MooseX::Orochi
+
+Suppose you have a dependency graph like the following:
+
+  MyApp ---> MyApp::Model::Foo ---> MyApp::Schema ---> DBI Args
+                               |
+                               ---> MyApp::Logger ---> File Name
+
+If you're building everything based on moose from scratch, you will define this dependency like the following. First, MyApp:
+
+  package MyApp;
+  use Moose;
+  use MooseX::Orochi;
+
+  has 'foo' => (
+    is => 'ro',
+    isa => 'MyApp::Model::Foo'
+  );
+
+  bind_constructor 'myapp' => (
+    args => {
+      foo => bind_value 'myapp/model/foo'
+    }
+  );
+
+
+Notice the use of MooseX::Orochi, and the calls to C<bind_constructor>. It
+tells us that an instance of MyApp can be retrieved by the name 'myapp'
+
+  $c->get('myapp');
+
+and that the value for argument C<foo> should be taken from another
+injected resource named 'myapp/model/foo'
+
+  MyApp->new(foo => $c->get('myapp/model/foo'));
+
+If you were to use Setter injection instead, then it will lead to Orochi calling Orochi::Injection::Setter, which in turn will call MyApp's constructor, and setter(s) like so:
+
+  bind_constructor 'myapp' => (
+    injection_type => 'Setter',
+    setter_params => {
+      foo => bind_value 'myapp/model/foo'
+    }
+  );
+
+  # above will trigger the following code:
+  my $app = MyApp->new();
+  $app->foo($c->get('myapp/model/foo'));
+
+The rest of the classes works mostly the same way. Here's MyApp::Model::Foo, and MyApp::Logger:
+
+  package MyApp::Model::Foo;
+  use Moose;
+  use MooseX::Orochi;
+
+  has 'schema' => (
+    is => 'ro',
+    isa => 'MyApp::Schema',
+  );
+
+  bind_constructor 'myapp/model/foo' => (
+    args => {
+      schema => bind_value 'myapp/schema',
+      logger => bind_value 'myapp/logger',
+    }
+  );
+
+  package MyApp::Logger;
+  use Moose;
+  use MooseX::Orochi;
+  use MooseX::Types::Path::Class;
+
+  has 'filename' => (
+    is => 'ro',
+    isa => 'Path::Class::File',
+    coerce => 1
+  );
+
+  bind_constructor 'myapp/logger' => (
+    args => {
+      filename => bind_value 'myapp/logger/filename'
+    }
+  );
+
+MyApp::Schema is a bit different, in that it is DBIx::Class::Schema based, and you won't be calling new() to instantiate it (you'd call C<connection()>), and you don't pass a name => value pair (you'd pass @connect_info).
+
+  package MyApp::Schema;
+  use Moose;
+  use MooseX::Orochi;
+  extends 'DBIx::Class::Schema';
+
+  bind_contructor 'schema/master' => (
+    args        => bind_value 'myapp/schema/connect_info',
+    deref_args  => 1,
+    constructor => 'connection'
+  );
+
+Here, we declare that MyApp::Schema will use myapp/schema/connect_info as its
+arguments (which will be de-referenced when passed to the constructor), and that
+we should use the method named 'connection' as the constructor.
+
+The value to 'myapp/schema/connect_info' needs to be declared else where:
+
+  my $c = Orochi->new();
+  $c->inject_literal(
+    'myapp/schema/connect_info' => [ 'dbi:mysql:dbname=foo', .... ] );
+
+Finally, we need to put everything together by registering these classes to our Orochi instance:
+
+  my $c = Orochi->new();
+  $c->inject_literal(
+    'myapp/logger/filename' => '/path/to/file.txt');
+  $c->inject_literal(
+    'myapp/schema/connect_info' => [ 'dbi:mysql:dbname=foo', .... ] );
+  $c->inject_class($_) for qw(
+    MyApp::Logger
+    MyApp::Schema
+    MyApp::Model::Foo
+    MyApp
+  );
+  # or $c->inject_namespace('MyApp');
+
+  my $app = $c->get('myapp');
+
+There are sometimes those modules that you just can touch from outside.
+In those cases, you will have to provide the objects yourself:
+
+  $c->inject('/path/to/another/dependency' => 
+    $c->construct( sub { ... } ) );
+
+=head1 TODO
+
+Documentation. Samples. Tests.
+
+=head1 AUTHOR
+
+Daisuke Maki C<< <daisuke@endeworks.jp> >>
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+See http://www.perl.com/perl/misc/Artistic.html
 
 =cut
