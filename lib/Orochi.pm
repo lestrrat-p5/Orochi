@@ -7,8 +7,6 @@ use Orochi::Injection::Literal;
 use Path::Router;
 use constant DEBUG => ($ENV{OROCHI_DEBUG});
 
-with 'MooseX::Traits';
-
 has prefix => (
     is => 'ro',
     isa => 'Str',
