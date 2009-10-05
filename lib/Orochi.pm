@@ -142,7 +142,9 @@ sub inject_class {
         return;
     } 
 
-    $self->inject( $meta->bind_path, $meta->bind_injection );
+    my $new_injection = $meta->bind_injection->meta->clone_object( $meta->bind_injection );
+    $new_injection->class( $class );
+    $self->inject( $meta->bind_path, $new_injection );
 
     my $injections = $meta->injections;
     while ( my($path, $injection) = each %$injections) {

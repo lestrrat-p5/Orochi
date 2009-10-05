@@ -5,7 +5,7 @@ use namespace::clean -except => qw(meta);
 with 'Orochi::Injection';
 
 has class => (
-    is => 'ro',
+    is => 'rw',
     isa => 'ClassName',
     required => 1
 );
