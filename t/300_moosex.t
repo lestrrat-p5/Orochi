@@ -17,7 +17,7 @@ use Orochi;
 }
 
 {
-    my $c = Orochi->new);
+    my $c = Orochi->new();
     $c->inject_literal( '/orochi/test/MooseBased1/foo', 1 );
     $c->inject_literal( '/orochi/test/MooseBased1/bar', 2 );
     $c->inject_class( 'Orochi::Test::MooseBased1' );
