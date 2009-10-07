@@ -1,6 +1,5 @@
 package Orochi::Injection::Setter;
 use Moose;
-use Storable;
 use namespace::clean -except => qw(meta);
 
 extends 'Orochi::Injection::Constructor';
