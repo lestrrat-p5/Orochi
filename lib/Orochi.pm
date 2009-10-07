@@ -7,7 +7,7 @@ use Orochi::Injection::Literal;
 use Path::Router;
 use constant DEBUG => ($ENV{OROCHI_DEBUG});
 
-our $VERSION = '0.00001_01';
+our $VERSION = '0.00001';
 
 has prefix => (
     is => 'ro',

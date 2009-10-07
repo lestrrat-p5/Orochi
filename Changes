@@ -1,5 +1,11 @@
 Changes
 =======
 
+0.00001 - Oct 08 2009
+    - Save some memory by sharing Data::Visitor (this may change later)
+    - Use the new Moose attribute traits
+    - Fix the unimport method in MooseX::Orochi
+    - Fix inherited bind specification by properly cloning the metaclass
+
 0.00001_01 - Oct 05 2009
     - Initial release
