@@ -1,6 +1,6 @@
 package MooseX::Orochi::Meta::Class;
 use Moose::Role;
-use MooseX::AttributeHelpers;
+use namespace::clean -except => qw(meta);
 
 has bind_path => (
     is => 'rw',
@@ -13,11 +13,11 @@ has bind_injection => (
 );
 
 has injections => (
-    metaclass => 'Collection::Hash',
+    traits => ['Hash'],
     is => 'rw',
     isa => 'HashRef',
-    provides => {
-        set => 'add_injection',
+    handles => {
+        add_injection => 'set',
     }
 );
 
