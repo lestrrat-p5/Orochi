@@ -250,6 +250,28 @@ In those cases, you will have to provide the objects yourself:
   $c->inject('/path/to/another/dependency' => 
     $c->construct( sub { ... } ) );
 
+=head1 SUBCLASS
+
+Once you use MooseX::Orochi, every subclass can re-use the bind instructions.
+
+    package MyApp;
+    use Moose;
+    use MooseX::Orochi;
+
+    bind_constructor 'myapp' => ( ... );
+
+
+    package MyApp::Extended;
+    use Moose;
+
+    extends 'MyApp';
+
+In the above case, unless you explicitly override the bind instructions
+in MyApp::Extended, you can inject MyApp::Extended and expect it to be
+available at
+
+    $c->get('myapp');
+
 =head1 TODO
 
 Documentation. Samples. Tests.
