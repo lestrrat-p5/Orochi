@@ -9,7 +9,7 @@ use Sub::Exporter -setup => {
 
 sub unimport {
     my $package = caller(0);
-    foreach my $name qw( as container depends_on service wire_names ) {
+    foreach my $name qw( bin_value container inject_constructor inject_literal ) {
         no strict 'refs';
 
         if ( defined &{ $package . '::' . $name } ) {
