@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.00002 - Oct 16 2009
+    - Cache the expanded value when an injection runs
+
 0.00001 - Oct 08 2009
     - Save some memory by sharing Data::Visitor (this may change later)
     - Use the new Moose attribute traits
