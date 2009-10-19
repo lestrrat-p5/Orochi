@@ -47,8 +47,9 @@ sub bind_constructor ($;%) {
 }
 
 sub bind_value ($) {
-    my ($path) = @_;
-    return Orochi::Injection::BindValue->new(bind_to => $path);
+    my $bind_to = (@_ == 1 && ref $_[0] ne 'ARRAY') ?
+        [ $_[0] ] : $_[0];
+    return Orochi::Injection::BindValue->new(bind_to => $bind_to);
 }
 
 sub inject ($$) {
