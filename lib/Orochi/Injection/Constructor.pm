@@ -6,7 +6,8 @@ with 'Orochi::Injection';
 
 has class => (
     is => 'rw',
-    isa => 'ClassName',
+    isa => 'Str', # if we make this a 'ClassName', we force the user to
+                  # load it before hand
     required => 1
 );
 
@@ -40,6 +41,10 @@ sub expand {
     my ($self, $c) = @_;
 
     my @args = $self->mangle_args($c);
+    if (Orochi::DEBUG()) {
+        require Data::Dumper;
+        Orochi::_debug( "Constructor: expanding class '%s' with args %s", $self->class, Data::Dumper::Dumper(\@args) );
+    }
     return $self->construct_object($c, \@args);
 }
 
@@ -47,9 +52,14 @@ sub construct_object {
     my ($self, $c, $args) = @_;
 
     my $constructor = $self->constructor;
+    my $class = $self->class;
+    if (! Class::MOP::is_class_loaded($class) ) {
+        Class::MOP::load_class($class);
+    }
+
     return $self->has_block ?
-        $self->block->( $self->class, @$args ) :
-        $self->class->$constructor(@$args)
+        $self->block->( $class, @$args ) :
+        $class->$constructor(@$args)
     ;
 }
 
@@ -77,7 +87,6 @@ sub mangle_args {
     }
 
     $self->expand_all_injections($c, \@args);
-
     return @args;
 }
 
