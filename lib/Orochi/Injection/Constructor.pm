@@ -41,7 +41,7 @@ sub expand {
     my ($self, $c) = @_;
 
     my @args = $self->mangle_args($c);
-    if (Orochi::DEBUG() > 2) {
+    if (Orochi::DEBUG() >= 2) {
         require Data::Dumper;
         Orochi::_debug( "Constructor: expanding class '%s' with args %s", $self->class, Data::Dumper::Dumper(\@args) );
     } elsif (Orochi::DEBUG() == 1) {
@@ -73,7 +73,11 @@ sub mangle_args {
         my $x = $self->args;
 
         if (blessed $x && Moose::Util::does_role($x, 'Orochi::Injection')) {
-            $x = $x->expand($c);
+            my $injection = $x;
+            $x = $injection->expand($c);
+            if ($x && (my $post_expand = $injection->can('post_expand')) ) {
+                $post_expand->($injection, $c, $x);
+            }
         }
         
         if ($self->deref_args) {
@@ -88,8 +92,9 @@ sub mangle_args {
         }
     }
 
-    $self->expand_all_injections($c, \@args);
-    return @args;
+    my $wrap = [@args];
+    $self->expand_all_injections($c, $wrap);
+    return @$wrap;
 }
 
 1;
