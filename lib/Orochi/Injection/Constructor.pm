@@ -41,9 +41,11 @@ sub expand {
     my ($self, $c) = @_;
 
     my @args = $self->mangle_args($c);
-    if (Orochi::DEBUG()) {
+    if (Orochi::DEBUG() > 2) {
         require Data::Dumper;
         Orochi::_debug( "Constructor: expanding class '%s' with args %s", $self->class, Data::Dumper::Dumper(\@args) );
+    } elsif (Orochi::DEBUG() == 1) {
+        Orochi::_debug( "Constructor: expanding class '%s'", $self->class);
     }
     return $self->construct_object($c, \@args);
 }

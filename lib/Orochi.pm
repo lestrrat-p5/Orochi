@@ -1,11 +1,14 @@
 package Orochi;
 use Moose;
-use namespace::clean -except => qw(meta);
+use Data::Visitor::Callback;
 use Orochi::Injection::BindValue;
 use Orochi::Injection::Constructor;
 use Orochi::Injection::Literal;
 use Path::Router;
-use constant DEBUG => ($ENV{OROCHI_DEBUG});
+use Scalar::Util qw(refaddr);
+use namespace::clean -except => qw(meta);
+
+use constant DEBUG => ($ENV{OROCHI_DEBUG} || 0);
 
 our $VERSION = '0.00003';
 
@@ -21,8 +24,36 @@ has router => (
     lazy_build => 1,
 );
 
+has _expander => (
+    is         => 'ro',
+    isa        => 'Data::Visitor',
+    lazy_build => 1,
+);
+
+has _expanded_values => ( # cache
+    is         => 'ro',
+    isa        => 'HashRef',
+    default    => sub { {} }
+);
+
 sub _build_router {
     return Path::Router->new();
+}
+
+sub _build__expander {
+    my $self = shift;
+    return Data::Visitor::Callback->new(
+        object_final => sub {
+            my ($visitor, $object) = @_;
+            my $ret  = $object;
+            my $DOES = $object->can('DOES');
+            if ($DOES && $DOES->($object, 'Orochi::Injection')) {
+                $ret = $object->expand( $self );
+                $_ = $ret;
+            }
+            return $ret;
+        }
+    )
 }
 
 our $Indent = -1;
@@ -38,23 +69,31 @@ sub get {
     if (DEBUG()) {
         Orochi::_debug("Orochi: fetching '%s'", $path);
     }
-    $path = $self->mangle_path( $path );
-    my $matched = $self->router->match( $path );
-    my $value;
     local $Indent = $Indent + 1;
-    if ( $matched ) {
-        if ( blessed $matched->target && Moose::Util::does_role( $matched->target, 'Orochi::Injection') ) {
+
+    $path = $self->mangle_path( $path );
+
+    my ($cached, $matched, $value);
+    if (exists $self->_expanded_values->{$path}) {
+        $cached = 1;
+    }
+
+    if ($cached) {
+        $value = $self->_expanded_values->{$path};
+    } else {
+        $matched = $self->router->match( $path );
+        if ( $matched ) {
             $value = $matched->target->expand( $self );
-            # $matched->route->target( $value );
-            # XXX - BAD BOY!
-#            $matched->route->{target} = $value;
-        } else {
-            $value = $matched->target;
+            $self->_expanded_values->{$path} = $value;
         }
     }
 
+    if ($matched && (my $post_expand = $matched->target->can('post_expand'))) {
+        $post_expand->( $matched->target, $self, $value );
+    }
+
     if (DEBUG()) {
-        Orochi::_debug("Orochi: '%s' resolves to '%s' (MATCH: %s)", $path, $value || '(null)', $matched ? "YES" : "NO");
+        Orochi::_debug("Orochi: '%s' resolves to '%s' (MATCH: %s, CACHE: %s)", $path, $value || '(null)', $matched ? "YES" : "NO", $cached ? "YES" : "NO");
     }
     return $value;
 }

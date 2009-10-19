@@ -10,10 +10,9 @@ has setter_params => (
     required => 1
 );
 
-override expand => sub {
-    my ($self, $c) = @_;
+sub post_expand {
+    my ($self, $c, $object) = @_;
 
-    my $object = super();
     my $params = $self->setter_params;
     $self->expand_all_injections( $c, $params );
 
@@ -25,6 +24,7 @@ override expand => sub {
     }
     $object;
 };
+
 
 __PACKAGE__->meta->make_immutable();
 
