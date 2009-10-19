@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.00003 - Oct 19 2009
+    - Fix the DSL prototype for bind_value with cascading binds
+
 0.00002 - Oct 16 2009
     - Cache the expanded value when an injection runs
 
