@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.00005 - Oct 19 2009
+    - Do the post-expand processing for arguments, too
+    - Use a newly created element when processing arguments, thus
+      circumventing Perl's optimization that reuses local arrays
+    - Fix debug level check
+
 0.00004 - Oct 19 2009
     - Fix circular bind dependency for setter injections
 
