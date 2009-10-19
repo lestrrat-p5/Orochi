@@ -255,10 +255,13 @@ Orochi constructor, for example
 
 Injects a Orochi::Injection object.
 
-=head2 bind_value($path)
+=head2 bind_value($path) or bind_value(\@paths)
 
 Creates a BindValue injection, which is a lazy evaluation based on a 
 Orochi key.
+
+If given a list, will cascade through the given paths until one returns a
+defined value
 
 =head2 inject_constructor($path => %injection_args)
 
