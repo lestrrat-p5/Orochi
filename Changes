@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.00004 - Oct 19 2009
+    - Fix circular bind dependency for setter injections
+
 0.00003 - Oct 19 2009
     - Fix the DSL prototype for bind_value with cascading binds
 
