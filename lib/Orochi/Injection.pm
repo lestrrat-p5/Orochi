@@ -14,15 +14,20 @@ sub expand_all_injections {
     $VISITOR ||= Data::Visitor::Callback->new(
         object_final => sub {
             my ($visitor, $object) = @_;
+
+            my $ret  = $object;
             my $DOES = $object->can('DOES');
             if ($DOES && $DOES->($object, 'Orochi::Injection')) {
-                return $_ = $object->expand( $visitor->{OROCHI} );
+                $ret = $object->expand( $visitor->{OROCHI} );
+                $_ = $ret;
             }
-            return $object;
+            return $ret;
         }
     );
     local $VISITOR->{OROCHI} = $c;
     $VISITOR->visit($thing);
+
+    return $thing;
 }
 
 1;
