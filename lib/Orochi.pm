@@ -11,7 +11,7 @@ use namespace::clean -except => qw(meta);
 
 use constant DEBUG => ($ENV{OROCHI_DEBUG} || 0);
 
-our $VERSION = '0.00005';
+our $VERSION = '0.00006';
 
 has prefix => (
     is => 'ro',
