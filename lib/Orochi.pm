@@ -1,6 +1,7 @@
 package Orochi;
 use Moose;
 use Data::Visitor::Callback;
+use Module::Pluggable::Object;
 use Orochi::Injection::BindValue;
 use Orochi::Injection::Constructor;
 use Orochi::Injection::Literal;
