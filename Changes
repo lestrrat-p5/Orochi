@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.00006 - Dec 11 2009
+    - Add missing Module::Pluggable dependency
+    - Better protect against non-Moose, non-Orochi objects in inject_class
+
 0.00005 - Oct 19 2009
     - Do the post-expand processing for arguments, too
     - Use a newly created element when processing arguments, thus
