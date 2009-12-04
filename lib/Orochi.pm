@@ -183,11 +183,13 @@ sub inject_class {
     my $meta;
 
     # Find the first Orochi meta class in the inheritance tree
-    foreach my $a_class ( $class->meta->linearized_isa ) {
-        my $foo;
-        $foo = Moose::Util::find_meta($a_class);
-        if (Moose::Util::does_role($foo, 'MooseX::Orochi::Meta::Class')) {
-            $meta = $foo;
+    if ($class->meta && $class->meta->can('linearized_isa')) {
+        foreach my $a_class ( $class->meta->linearized_isa ) {
+            my $foo;
+            $foo = Moose::Util::find_meta($a_class);
+            if (Moose::Util::does_role($foo, 'MooseX::Orochi::Meta::Class')) {
+                $meta = $foo;
+            }
         }
     }
 
