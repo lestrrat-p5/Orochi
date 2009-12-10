@@ -120,7 +120,7 @@ sub inject {
     $path = $self->mangle_path($path);
 
     if (DEBUG()) {
-        Orochi::_debug("Orochi: Injecting %s", $path);
+        Orochi::_debug("Injecting %s", $path);
     }
     $self->router->insert_route($path => (target => $injection));
 }
@@ -175,6 +175,10 @@ sub inject_literal {
 
 sub inject_class {
     my ($self, $class) = @_;
+
+    if (DEBUG()) {
+        Orochi::_debug("inject_class( $class )");
+    }
 
     if (! Class::MOP::is_class_loaded($class)) {
         Class::MOP::load_class($class);
