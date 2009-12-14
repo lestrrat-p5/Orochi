@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.00007 - Dec 14 2009
+    - Properly terminate searching for parent classes when a MooseX::Orochi
+      meta class is found.
+    - Don't clone the parent injection if you already implement one
+
 0.00006 - Dec 11 2009
     - Add missing Module::Pluggable dependency
     - Better protect against non-Moose, non-Orochi objects in inject_class
