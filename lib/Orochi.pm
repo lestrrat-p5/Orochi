@@ -84,7 +84,12 @@ sub get {
     } else {
         $matched = $self->router->match( $path );
         if ( $matched ) {
-            $value = $matched->target->expand( $self );
+            eval {
+                $value = $matched->target->expand( $self );
+            };
+            if ($@) {
+                die "An error occurred while attempting to expand for $path: $@";
+            }
             $self->_expanded_values->{$path} = $value;
         }
     }
@@ -193,6 +198,7 @@ sub inject_class {
             $foo = Moose::Util::find_meta($a_class);
             if (Moose::Util::does_role($foo, 'MooseX::Orochi::Meta::Class')) {
                 $meta = $foo;
+                last;
             }
         }
     }
@@ -211,6 +217,8 @@ sub inject_class {
         return;
     } 
 
+    # if we're using that of our parent class, then we should clone the
+    # injection object. if not, just create our own
     my $new_injection = $meta->bind_injection->meta->clone_object( $meta->bind_injection );
     $new_injection->class( $class );
     $self->inject( $meta->bind_path, $new_injection );
