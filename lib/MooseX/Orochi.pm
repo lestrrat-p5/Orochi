@@ -121,6 +121,8 @@ the containing Injection is expanded.
 
 Injects the given injection.
 
+=back
+
 =head1 ANNOTATIONS WITH MooseX::Orochi
 
 Suppose you have a dependency graph like the following:
