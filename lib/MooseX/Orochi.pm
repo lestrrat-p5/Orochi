@@ -20,8 +20,11 @@ sub init_meta {
             ->apply( $meta )
         ;
     } else {
-        Moose::Util::MetaRole::apply_metaclass_roles(@_,
-            metaclass_roles => [ 'MooseX::Orochi::Meta::Class' ]
+        Moose::Util::MetaRole::apply_metaroles(
+            for             => $args{for_class},
+            class_metaroles => {
+                class => [ 'MooseX::Orochi::Meta::Class' ],
+            },
         );
     }
     $meta;
